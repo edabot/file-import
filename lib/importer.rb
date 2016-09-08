@@ -23,7 +23,6 @@ def parse_account(account, amount)
   return result
 end
 
-
 def check_header(header)
   raise "incorrect file type" unless header[0] == "/*BDI*/"
   if header[1].split(": ").length < 2
@@ -35,8 +34,8 @@ def check_header(header)
 end
 
 def process_header(header)
-  @result = { 'batch' => header[1].split(" ")[-1],
-             'description' => header[2][13..-1],
+  @result = { 'batch' => header[1].split(": ")[-1],
+             'description' => header[2].split(": ")[-1],
              "accounts" => []
             }
 end
@@ -44,15 +43,15 @@ end
 def check_entry(entry, data)
   unless data["Transaction"]
     puts entry
-    raise "transaction number missing"
+    raise "Transaction number missing"
   end
   if data["Transaction"] != data["Transaction"].to_i.to_s
     puts entry
-    raise "transaction is not a number"
+    raise "Transaction is not a number"
   end
   unless data["Originator"]
     puts entry
-    raise "transaction originator missing"
+    raise "Transaction originator missing"
   end
   unless /^\d+\s\/\s\d+$/ === data["Originator"]
     puts entry
@@ -60,7 +59,7 @@ def check_entry(entry, data)
   end
   unless data["Recipient"]
     puts entry
-    raise "transaction recipient missing"
+    raise "Transaction recipient missing"
   end
   unless /\d+\s\/\s\d+/ === data["Recipient"]
     puts entry
@@ -68,7 +67,7 @@ def check_entry(entry, data)
   end
   unless data["Type"]
     puts entry
-    raise "type of transaction missing"
+    raise "Type of transaction missing"
   end
   unless data["Type"] == "Debit" || data["Type"] == "Credit"
     puts entry
@@ -76,11 +75,11 @@ def check_entry(entry, data)
   end
   unless data["Amount"]
     puts entry
-    raise "amount missing"
+    raise "Amount missing"
   end
   if data["Amount"] != data["Amount"].to_i.to_s
     puts entry
-    raise "amount is not a number"
+    raise "Amount is not a number"
   end
 end
 
@@ -97,16 +96,24 @@ def process_entries
   end
 end
 
-@accounts_hash = {}
-if ARGV[0]
+def process_file
   input = File.read(ARGV[0]).split("==\n")
+
   header = input[0].split("\n")
   check_header(header)
   process_header(header)
+
   @entries = input[1..-1].map { |line| line.split("\n") }
   process_entries
 
   @accounts_hash.each { |account, value| @result["accounts"].push(parse_account(account, value)) }
 
   $stdout.puts JSON.generate(@result)
+end
+
+@accounts_hash = {}
+if ARGV[0]
+  process_file
+else
+  puts "please enter the file name (ex. 'ruby importer.rb data.bdi')"
 end
