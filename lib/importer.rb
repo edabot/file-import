@@ -98,13 +98,15 @@ def process_entries
 end
 
 @accounts_hash = {}
-input = File.read(ARGV[0]).split("==\n")
-header = input[0].split("\n")
-check_header(header)
-process_header(header)
-@entries = input[1..-1].map { |line| line.split("\n") }
-process_entries
+if ARGV[0]
+  input = File.read(ARGV[0]).split("==\n")
+  header = input[0].split("\n")
+  check_header(header)
+  process_header(header)
+  @entries = input[1..-1].map { |line| line.split("\n") }
+  process_entries
 
-@accounts_hash.each { |account, value| @result["accounts"].push(parse_account(account, value)) }
+  @accounts_hash.each { |account, value| @result["accounts"].push(parse_account(account, value)) }
 
-$stdout.puts JSON.generate(@result)
+  $stdout.puts JSON.generate(@result)
+end
